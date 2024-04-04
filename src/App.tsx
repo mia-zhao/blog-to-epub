@@ -6,6 +6,11 @@ import './App.css'
 function App() {
   const [count, setCount] = useState(0)
 
+  const activate = () => {
+    // tell the background script to inject the content script
+    chrome.runtime.sendMessage({ message: 'activate' })
+  }
+
   return (
     <>
       <div>
@@ -28,6 +33,7 @@ function App() {
       <p className="read-the-docs">
         Click on the Vite and React logos to learn more
       </p>
+      <button onClick={activate}>Select blogs</button>
     </>
   )
 }
