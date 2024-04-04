@@ -1,5 +1,6 @@
-import JSZip from "jszip";
-import saveAs from "file-saver";
+// import JSZip from "jszip";
+// import saveAs from "file-saver";
+import { getHtmlFromUrl, parseHtml, htmlToEpub } from "./src/epub";
 
 console.log("content script is running...");
 
@@ -94,12 +95,18 @@ function handleList(listElements: Element[]) {
   listElements.map((element) => {
     const href = element.getAttribute("href");
     if (href != null) {
-      urls.push(href.startsWith("http") ? href : `${document.URL}${href}`);
+      const url = new URL(href, document.URL);
+      urls.push(href.startsWith("http") ? href : `${url}`);
     }
   });
   convertToEpub(urls);
 }
 
 async function convertToEpub(urls: string[]) {
-  // TODO
+  getHtmlFromUrl(urls[0]).then((html) => {
+    const parsed = parseHtml(html);
+    if (parsed) {
+      htmlToEpub(parsed);
+    }
+  });
 }
