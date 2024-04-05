@@ -28,7 +28,7 @@ export function htmlToEpub(html: HTMLElement) {
       title,
       publisher: "PUBLISHER",
       creator: "CREATOR",
-    })
+    }),
   );
 
   // create OEBPS/content.xhtml
@@ -36,8 +36,11 @@ export function htmlToEpub(html: HTMLElement) {
     .folder("OEBPS")
     ?.file(
       "content.xhtml",
-      `<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" lang="en"><head><title>TITLE</title></head><body>${html.outerHTML}</body></html>`
+      `<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" lang="en"><head><title>TITLE</title><link rel="stylesheet" type="text/css" href="styles.css"/></head><body>${html.outerHTML}</body></html>`,
     );
+
+  // create OEBPS/styles.css
+  zip.folder("OEBPS")?.file("styles.css", parseCss());
 
   zip.generateAsync({ type: "blob" }).then((blob) => {
     saveAs(blob, `${title}_${id}.epub`);
@@ -81,4 +84,16 @@ function createOpf({
    <itemref idref="content"/>
   </spine>
 </package>`;
+}
+
+function parseCss() {
+  return `body {
+  font-family: sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: inherit;
+  font-size: inherit;
+}`;
 }
