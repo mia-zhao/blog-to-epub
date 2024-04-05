@@ -25,7 +25,7 @@ document.addEventListener(
     }
     handleList(listElements);
   },
-  true // useCapture is set to true to prevent the event from bubbling up
+  true, // useCapture is set to true to prevent the event from bubbling up
 );
 
 function getBoundingElement(event: MouseEvent): HTMLElement | null {
@@ -76,7 +76,7 @@ function handleOverlay() {
 
   const mouseOutLitener = () => {
     Object.keys(overlayStyle).forEach((key) =>
-      overlay.style.removeProperty(key)
+      overlay.style.removeProperty(key),
     );
   };
 
