@@ -3,9 +3,13 @@
   "name": "Blog to Epub",
   "version": "0.0.1",
   "action": { "default_popup": "index.html" },
-  "permissions": ["activeTab", "scripting"],
+  "permissions": ["activeTab", "scripting", "storage"],
   "background": {
     "service_worker": "background.ts",
     "type": "module"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
   }
 }

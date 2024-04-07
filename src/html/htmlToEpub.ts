@@ -28,16 +28,19 @@ export function htmlToEpub(html: HTMLElement) {
       title,
       publisher: "PUBLISHER",
       creator: "CREATOR",
-    }),
+    })
   );
 
   // create OEBPS/content.xhtml
-  zip
-    .folder("OEBPS")
-    ?.file(
-      "content.xhtml",
-      `<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" lang="en"><head><title>TITLE</title><link rel="stylesheet" type="text/css" href="styles.css"/></head><body>${html.outerHTML}</body></html>`,
-    );
+  zip.folder("OEBPS")?.file(
+    "content.xhtml",
+    `<?xml version="1.0" encoding="UTF-8"?>
+      <!DOCTYPE html>
+      <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" lang="en">
+        <head><title>TITLE</title><link rel="stylesheet" type="text/css" href="styles.css"/></head>
+        <body><section epub:type="chapter">${html.outerHTML}</section></body>
+      </html>`
+  );
 
   // create OEBPS/styles.css
   zip.folder("OEBPS")?.file("styles.css", parseCss());
@@ -88,12 +91,13 @@ function createOpf({
 
 function parseCss() {
   return `body {
-  font-family: sans-serif;
-}
+    font-family: sans-serif;
+  }
 
-a {
-  color: inherit;
-  text-decoration: inherit;
-  font-size: inherit;
-}`;
+  a {
+    color: inherit;
+    text-decoration: inherit;
+    font-size: inherit;
+    text-decoration: underline;
+  }`;
 }

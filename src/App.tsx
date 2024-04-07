@@ -1,39 +1,66 @@
 import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
 import "./App.css";
 
 function App() {
-  const [count, setCount] = useState(0);
+  const [inSelectMode, setInSelectMode] = useState(false);
+  const [isContentScriptReady, setIsContentScriptReady] = useState(false);
 
-  const activate = () => {
-    // tell the background script to inject the content script
-    chrome.runtime.sendMessage({ message: "activate" });
+  chrome.storage.local.get("InSelectMode", function (result) {
+    setInSelectMode(result.InSelectMode || false);
+  });
+
+  (function activate() {
+    chrome.runtime.sendMessage(
+      { message: "activate" },
+      function ({ response }) {
+        if (response === "activated") {
+          setIsContentScriptReady(true);
+        }
+      }
+    );
+  })();
+
+  const enterSelectMode = () => {
+    // tell the background script to inject the content script and enter select mode
+    chrome.runtime.sendMessage({ message: "select" }, function ({ response }) {
+      if (response === "selected") {
+        chrome.storage.local.set({ InSelectMode: true });
+        setInSelectMode(true);
+      }
+    });
+  };
+
+  const enterDeselectMode = () => {
+    // tell the background script to exit select mode
+    chrome.runtime.sendMessage({ message: "deselect" }, function () {
+      chrome.storage.local.set({ InSelectMode: false });
+      setInSelectMode(false);
+    });
+  };
+
+  const generate = () => {
+    chrome.runtime.sendMessage({ message: "urls" });
   };
 
   return (
     <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
+      {!inSelectMode ? (
+        <button
+          className="cta"
+          onClick={enterSelectMode}
+          disabled={!isContentScriptReady}
+        >
+          <span className="cta-text">Select Articles</span>
         </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-      <button onClick={activate}>Select blogs</button>
+      ) : (
+        <button className="cta" onClick={enterDeselectMode}>
+          <span className="cta-text">Exit Select Mode</span>
+        </button>
+      )}
+      <button className="cta" onClick={generate}>
+        <span className="cta-text">Generate Epub</span>
+        <span className="material-symbols-outlined">open_in_new</span>
+      </button>
     </>
   );
 }

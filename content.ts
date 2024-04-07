@@ -1,32 +1,92 @@
-// import JSZip from "jszip";
-// import saveAs from "file-saver";
-import { getHtmlFromUrl, parseHtml, htmlToEpub } from "./src/epub";
-
 console.log("content script is running...");
 
-let selectedElement: HTMLElement | null = null;
+const selectedElements: HTMLElement[] = [];
 
-handleOverlay();
+let removeOverlay = () => {};
 
-document.addEventListener(
-  "click",
-  (event) => {
-    event.stopImmediatePropagation();
-    event.preventDefault();
+chrome.runtime.onMessage.addListener((message) => {
+  console.log(message);
+  if (message.message === "select") {
+    removeOverlay = handleOverlay();
 
-    if (selectedElement === null) return;
+    // use mouse click to select and deselect elements
+    // useCapture is set to true to prevent the event from bubbling up
+    document.addEventListener("click", clickListener, true);
+  } else if (message.message === "deselect") {
+    removeOverlay();
 
-    const listElements: Element[] = [];
-    if (selectedElement.parentElement !== null) {
-      const parent = selectedElement.parentElement;
-      for (const child of parent.children) {
-        listElements.push(child);
-      }
+    document.removeEventListener("click", clickListener, true);
+  }
+});
+
+function clickListener(event) {
+  event.stopImmediatePropagation();
+  event.preventDefault();
+
+  const selectedElement = getBoundingElement(event);
+
+  if (!selectedElement) return;
+
+  const highlightStyle = { backgroundColor: "rgb(255, 233, 165, 0.8)" };
+
+  // deselect element
+  if (selectedElements.includes(selectedElement)) {
+    selectedElements.splice(selectedElements.indexOf(selectedElement), 1);
+    setElementStyle(selectedElement, { backgroundColor: "inherit" });
+    return;
+  }
+
+  const listElements = getParallelList(selectedElement);
+
+  // add selected elements to the list
+  selectedElements.push(...listElements);
+  selectedElements.splice(
+    0,
+    selectedElements.length,
+    ...Array.from(new Set(selectedElements))
+  );
+
+  listElements.forEach((element) => {
+    setElementStyle(element, highlightStyle);
+  });
+}
+
+function setElementStyle(
+  element: HTMLElement,
+  style: Partial<CSSStyleDeclaration>
+) {
+  Object.assign(element.style, style);
+}
+
+function removeElementStyle(
+  element: HTMLElement,
+  style: Partial<CSSStyleDeclaration>
+) {
+  Object.keys(style).forEach((key) => element.style.removeProperty(key));
+}
+
+// get the list of elements that are in the same level as the argument element
+function getParallelList(element: HTMLElement): HTMLElement[] {
+  // get CSS selector of a single element
+  const getCssSelector = (target: Element): string => {
+    return `${target.tagName.toLowerCase()}`;
+  };
+
+  // get CSS selector path from html
+  const getCssSelectorPath = (target: Element): string => {
+    let path = "";
+    let current: Element | null = target;
+    while (current !== null && current.tagName.toLowerCase() !== "html") {
+      const selector = getCssSelector(current);
+      path = `${selector} > ${path}`;
+      current = current.parentElement;
     }
-    handleList(listElements);
-  },
-  true, // useCapture is set to true to prevent the event from bubbling up
-);
+    return path.substring(0, path.length - 3);
+  };
+
+  const path = getCssSelectorPath(element);
+  return Array.from(document.querySelectorAll(path));
+}
 
 function getBoundingElement(event: MouseEvent): HTMLElement | null {
   for (const target of event.composedPath()) {
@@ -40,7 +100,7 @@ function getBoundingElement(event: MouseEvent): HTMLElement | null {
 
 function handleOverlay() {
   const overlayContainer = document.createElement("div");
-  overlayContainer.id = "recorder-overlay-container";
+  overlayContainer.id = "overlay-container";
   document.body.appendChild(overlayContainer);
 
   const shadow = overlayContainer.attachShadow({ mode: "open" });
@@ -60,7 +120,6 @@ function handleOverlay() {
     event.preventDefault();
     event.stopImmediatePropagation();
     const target = getBoundingElement(event);
-    selectedElement = target;
     if (target != null) {
       const { top, left, width, height } = target.getBoundingClientRect();
       overlayStyle = {
@@ -70,43 +129,59 @@ function handleOverlay() {
         width: `${width}px`,
         height: `${height}px`,
       };
-      Object.assign(overlay.style, overlayStyle);
+      setElementStyle(overlay, overlayStyle);
     }
   };
 
-  const mouseOutLitener = () => {
-    Object.keys(overlayStyle).forEach((key) =>
-      overlay.style.removeProperty(key),
-    );
+  const mouseOutListener = () => {
+    removeElementStyle(overlay, overlayStyle);
   };
 
   document.addEventListener("mouseover", mouseOverListener);
-  document.addEventListener("mouseout", mouseOutLitener);
+  document.addEventListener("mouseout", mouseOutListener);
 
   return () => {
     document.body.removeChild(overlayContainer);
     document.removeEventListener("mouseover", mouseOverListener);
-    document.removeEventListener("mouseout", mouseOutLitener);
+    document.removeEventListener("mouseout", mouseOutListener);
   };
 }
 
-function handleList(listElements: Element[]) {
+function getHref(element: HTMLElement): string {
+  const href = element.getAttribute("href");
+  if (href) {
+    return href;
+  }
+  if (element.parentElement) {
+    return getHref(element.parentElement);
+  }
+  return "";
+}
+
+function handleList(listElements: HTMLElement[]) {
   const urls: string[] = [];
   listElements.map((element) => {
-    const href = element.getAttribute("href");
+    const href = getHref(element);
     if (href != null) {
       const url = new URL(href, document.URL);
       urls.push(href.startsWith("http") ? href : `${url}`);
     }
   });
-  convertToEpub(urls);
-}
+  console.log(urls);
 
-async function convertToEpub(urls: string[]) {
-  getHtmlFromUrl(urls[0]).then((html) => {
-    const parsed = parseHtml(html);
-    if (parsed) {
-      htmlToEpub(parsed);
-    }
-  });
+  // const urls = Array.from(document.querySelectorAll("a"))
+  // .map((element) => {
+  //   const rect = element.getBoundingClientRect();
+  //   if (rect.width !== 0 && rect.height !== 0) {
+  //     if (element.getAttribute("href") != null) {
+  //       const href = element.getAttribute("href");
+  //       if (href) {
+  //         return new URL(href, document.URL);
+  //       }
+  //     }
+  //   }
+  // })
+  // .filter((url) => url !== undefined);
+
+  chrome.runtime.sendMessage({ message: "urls", urls });
 }

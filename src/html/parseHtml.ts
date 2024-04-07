@@ -1,7 +1,6 @@
 export function parseHtml(html: string): HTMLElement | null {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, "text/html");
-
   return parseBody(doc.body);
 }
 
@@ -35,7 +34,7 @@ function parseBody(body: HTMLElement): HTMLElement | null {
   if (article) {
     return parseNode(article);
   }
-  return null;
+  return body;
 }
 
 // type Meta = { name: string; content: string };
