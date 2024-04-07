@@ -1,26 +1,39 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 function Options() {
   const [data, setData] = useState([]);
 
-  chrome.storage.local.get("state", (result) => {
-    const state = result.state || {};
-    chrome.storage.local.get(state.currentUrl, (data) => {
-      setData(data[state.currentUrl]);
+  useEffect(() => {
+    chrome.storage.local.get("state", (result) => {
+      const state = result.state || {};
+      chrome.storage.local.get(state.currentUrl, (result) => {
+        setData(result[state.currentUrl]);
+      });
     });
-  });
+  }, []);
 
   return (
     <>
       <table>
-        {data.map((url, idx) => (
-          <tr key={idx}>
+        <thead>
+          <tr>
             <td>
               <input type="checkbox" />
+              Select All
             </td>
-            <td>{url}</td>
+            <td></td>
           </tr>
-        ))}
+        </thead>
+        <tbody>
+          {data.map((url, idx) => (
+            <tr key={idx}>
+              <td>
+                <input type="checkbox" />
+              </td>
+              <td>{url}</td>
+            </tr>
+          ))}
+        </tbody>
       </table>
     </>
   );

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
 
 function App() {
@@ -21,7 +21,7 @@ function App() {
     setInSelectMode(state.InSelectMode || false);
   });
 
-  (function activate() {
+  useEffect(() => {
     chrome.runtime.sendMessage(
       { message: "activate" },
       function ({ response }) {
@@ -30,7 +30,7 @@ function App() {
         }
       }
     );
-  })();
+  }, []);
 
   const enterSelectMode = () => {
     // tell the background script to inject the content script and enter select mode
