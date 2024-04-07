@@ -35,11 +35,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ response: "deselected" });
       });
     });
-  } else if (message.message === "urls") {
-    chrome.storage.sync.set({ urls: message.urls }, () => {
-      // Open the options page after the URLs have been stored
-      chrome.runtime.openOptionsPage();
-    });
+  } else if (message.message === "options") {
+    chrome.runtime.openOptionsPage();
   }
   return true;
 });
