@@ -1,54 +1,114 @@
 console.log("content script is running...");
 
-const selectedElements: HTMLElement[] = [];
+let selectedElements: HTMLElement[] = [];
 
 let removeOverlay = () => {};
+let clickTimeout: NodeJS.Timeout | null = null;
+
+// reset state
+chrome.storage.local.set({ state: {} });
 
 chrome.runtime.onMessage.addListener((message) => {
-  console.log(message);
   if (message.message === "select") {
     removeOverlay = handleOverlay();
 
-    // use mouse click to select and deselect elements
+    // use mouse clicks to select and deselect elements
     // useCapture is set to true to prevent the event from bubbling up
     document.addEventListener("click", clickListener, true);
+    document.addEventListener("dblclick", dblclickListener);
   } else if (message.message === "deselect") {
     removeOverlay();
 
     document.removeEventListener("click", clickListener, true);
+    document.removeEventListener("dblclick", dblclickListener);
   }
 });
 
-function clickListener(event) {
+// single click to select and deselect one element
+function clickListener(event: MouseEvent) {
   event.stopImmediatePropagation();
   event.preventDefault();
 
-  const selectedElement = getBoundingElement(event);
+  const composedPath = event.composedPath();
+  const eventCopy = {
+    target: event.target,
+    composedPath: () => composedPath,
+  };
 
-  if (!selectedElement) return;
+  const clickHandler = () => {
+    const selectedElement = getBoundingElement(
+      eventCopy as unknown as MouseEvent
+    );
+    if (selectedElement === null) return;
+
+    const highlightStyle = { backgroundColor: "rgb(255, 233, 165, 0.8)" };
+
+    // deselect element
+    if (selectedElements.includes(selectedElement)) {
+      selectedElements.splice(selectedElements.indexOf(selectedElement), 1);
+      setElementStyle(selectedElement, { backgroundColor: "inherit" });
+      updateList(selectedElements);
+      return;
+    }
+
+    // add selected elements to the list and highlight the element
+    selectedElements.push(selectedElement);
+    setElementStyle(selectedElement, highlightStyle);
+
+    updateList(selectedElements);
+  };
+
+  if (event.detail == 1) {
+    clickTimeout = setTimeout(() => {
+      clickHandler();
+    }, 250);
+  }
+}
+
+// double click to select and deselect multiple elements
+function dblclickListener(event) {
+  event.stopImmediatePropagation();
+  event.preventDefault();
+
+  // cancel single click event listener
+  if (clickTimeout !== null) {
+    clearTimeout(clickTimeout);
+    clickTimeout = null;
+  }
+
+  const selectedElement = getBoundingElement(event);
+  if (selectedElement === null) return;
 
   const highlightStyle = { backgroundColor: "rgb(255, 233, 165, 0.8)" };
 
-  // deselect element
+  // deselect elements
   if (selectedElements.includes(selectedElement)) {
-    selectedElements.splice(selectedElements.indexOf(selectedElement), 1);
-    setElementStyle(selectedElement, { backgroundColor: "inherit" });
+    const listDeselect = getParallelList(selectedElement);
+    selectedElements = selectedElements.filter(
+      (element) => !listDeselect.includes(element)
+    );
+    listDeselect.forEach((element) =>
+      setElementStyle(element, { backgroundColor: "inherit" })
+    );
+    updateList(selectedElements);
     return;
   }
 
-  const listElements = getParallelList(selectedElement);
+  const listSelect = getParallelList(selectedElement);
 
   // add selected elements to the list
-  selectedElements.push(...listElements);
+  selectedElements.push(...listSelect);
   selectedElements.splice(
     0,
     selectedElements.length,
     ...Array.from(new Set(selectedElements))
   );
 
-  listElements.forEach((element) => {
+  listSelect.forEach((element) => {
     setElementStyle(element, highlightStyle);
   });
+
+  updateList(selectedElements);
 }
 
 function setElementStyle(
@@ -147,41 +207,34 @@ function handleOverlay() {
   };
 }
 
-function getHref(element: HTMLElement): string {
-  const href = element.getAttribute("href");
-  if (href) {
-    return href;
-  }
-  if (element.parentElement) {
-    return getHref(element.parentElement);
-  }
-  return "";
-}
-
-function handleList(listElements: HTMLElement[]) {
+function updateList(listElements: HTMLElement[]) {
   const urls: string[] = [];
-  listElements.map((element) => {
+
+  function getHref(element: HTMLElement): string {
+    const href = element.getAttribute("href");
+    if (href) {
+      return href;
+    }
+    if (element.parentElement) {
+      return getHref(element.parentElement);
+    }
+    return "";
+  }
+
+  listElements.forEach((element) => {
     const href = getHref(element);
     if (href != null) {
       const url = new URL(href, document.URL);
-      urls.push(href.startsWith("http") ? href : `${url}`);
+      urls.push(url.href);
     }
   });
-  console.log(urls);
 
-  // const urls = Array.from(document.querySelectorAll("a"))
-  // .map((element) => {
-  //   const rect = element.getBoundingClientRect();
-  //   if (rect.width !== 0 && rect.height !== 0) {
-  //     if (element.getAttribute("href") != null) {
-  //       const href = element.getAttribute("href");
-  //       if (href) {
-  //         return new URL(href, document.URL);
-  //       }
-  //     }
-  //   }
-  // })
-  // .filter((url) => url !== undefined);
+  console.log(urls.length);
 
-  chrome.runtime.sendMessage({ message: "urls", urls });
+  chrome.storage.local.set({ [document.URL]: urls });
+  chrome.storage.local.get("state", (result) => {
+    const state = result.state || {};
+    state.currentUrl = document.URL;
+    chrome.storage.local.set({ state });
+  });
 }
