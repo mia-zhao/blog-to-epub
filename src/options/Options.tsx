@@ -3,10 +3,13 @@ import { useState } from "react";
 function Options() {
   const [data, setData] = useState([]);
 
-  chrome.storage.sync.get("urls", (data) => {
-    // data.urls now contains the URLs
-    setData(data.urls);
+  chrome.storage.local.get("state", (result) => {
+    const state = result.state || {};
+    chrome.storage.local.get(state.currentUrl, (data) => {
+      setData(data[state.currentUrl]);
+    });
   });
+
   return (
     <>
       <table>
