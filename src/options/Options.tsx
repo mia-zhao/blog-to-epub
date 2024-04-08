@@ -39,8 +39,6 @@ function Options() {
     });
   }, []);
 
-  console.log(currentHome);
-
   useEffect(() => {
     chrome.storage.local.get(currentHome, (result) => {
       if (!result[currentHome]) return;
@@ -123,7 +121,6 @@ function Options() {
       const newData = currentData.filter(
         (val: URLInfo) => !selectedUrls.includes(val.url)
       );
-      console.log(newData);
       chrome.storage.local.set({ [currentHome]: newData }, () => {
         setData(newData);
         setSelectedUrls([]);
@@ -229,7 +226,7 @@ function Options() {
       {downloadStatus === DownloadStatus.ERROR && (
         <div className="toast toast-start">
           <div className="alert alert-error">
-            <span>Oops, there has been error.</span>
+            <span>Oops, there has been an error. Please try again later.</span>
           </div>
         </div>
       )}

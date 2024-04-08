@@ -16,7 +16,6 @@ function App() {
 
   useEffect(() => {
     chrome.storage.local.get("state", function (result) {
-      console.log(result);
       const state = result.state || {};
       if (state.currentUrl) {
         chrome.storage.local.get(state.currentUrl, function (result) {

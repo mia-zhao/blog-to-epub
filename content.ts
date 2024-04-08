@@ -1,5 +1,3 @@
-console.log("content script is running...");
-
 let selectedElements: HTMLElement[] = [];
 
 let removeOverlay = () => {};
@@ -241,8 +239,6 @@ function updateList(listElements: HTMLElement[]) {
       info.push({ url: url.href, title: text });
     }
   });
-
-  console.log(info.length);
 
   chrome.storage.local.get("home_list", (result) => {
     const home_list = result.home_list || [];

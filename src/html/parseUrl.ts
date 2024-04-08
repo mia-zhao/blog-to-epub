@@ -7,7 +7,6 @@ export async function getHtmlFromUrl(url: string): Promise<string> {
       if (xhr.readyState === 4) {
         if (xhr.status === 200) {
           const responseText = xhr.responseText;
-          console.log(responseText);
           resolve(responseText);
         } else {
           reject(new Error(`Failed to fetch ${url}`));
