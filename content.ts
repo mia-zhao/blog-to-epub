@@ -3,7 +3,7 @@ console.log("content script is running...");
 let selectedElements: HTMLElement[] = [];
 
 let removeOverlay = () => {};
-let clickTimeout: NodeJS.Timeout | null = null;
+let clickTimeout: ReturnType<typeof setTimeout> | null = null;
 
 // reset state
 chrome.storage.local.set({ state: {} });

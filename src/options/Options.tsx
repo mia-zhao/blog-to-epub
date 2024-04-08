@@ -1,19 +1,22 @@
 import { ChangeEvent, useEffect, useState } from "react";
+import { URLInfo } from "../storage";
 
 function Options() {
   const [homeList, setHomeList] = useState<string[]>([]);
   const [currentHome, setCurrentHome] = useState("");
-  const [data, setData] = useState<{ url: string; title: string }[]>([]);
+  const [data, setData] = useState<URLInfo[]>([]);
 
   const [selectAll, setSelectAll] = useState(false);
   const [selectedUrls, setSelectedUrls] = useState<string[]>([]);
+
+  const isSelected = selectedUrls.length > 0;
 
   useEffect(() => {
     chrome.storage.local.get("state", (result) => {
       const state = result.state || {};
       chrome.storage.local.get(state.currentUrl, (result) => {
         setCurrentHome(state.currentUrl);
-        setData(result[state.currentUrl]);
+        setData(result[state.currentUrl] || []);
         setSelectedUrls([]);
       });
     });
@@ -40,7 +43,7 @@ function Options() {
     } else {
       setSelectAll(false);
     }
-  }, [selectedUrls]);
+  }, [selectedUrls, data]);
 
   const toggleCheck = (idx: number) => {
     if (selectedUrls.includes(data[idx].url)) {
@@ -89,6 +92,19 @@ function Options() {
     downloadBlob(blob, "epub.epub");
   };
 
+  const deleteSelected = () => {
+    chrome.storage.local.get(currentHome, (result) => {
+      const currentData = result[currentHome];
+      const newData = currentData.filter(
+        (val: URLInfo) => !selectedUrls.includes(val.url)
+      );
+      chrome.storage.local.set({ [currentHome]: newData }, () => {
+        setData(newData);
+        setSelectedUrls([]);
+      });
+    });
+  };
+
   return (
     <>
       <select onChange={selectHome} value={currentHome}>
@@ -98,17 +114,28 @@ function Options() {
           </option>
         ))}
       </select>
-      <button onClick={download}>Download Epub</button>
+      {isSelected && (
+        <>
+          <button onClick={deleteSelected}>Delete Selected</button>{" "}
+          <button onClick={download}>Download Epub</button>
+        </>
+      )}
+
       <table>
         <thead>
           <tr>
             <td>
-              <input
-                type="checkbox"
-                checked={selectAll}
-                onChange={() => toggleAll(selectAll)}
-              />
-              Select All
+              <div className="form-control">
+                <label className="label cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectAll}
+                    className="checkbox checkbox-primary"
+                    onChange={() => toggleAll(selectAll)}
+                  />
+                  <span className="label-text">Select All</span>
+                </label>
+              </div>
             </td>
             <td>Title</td>
             <td>URL</td>
