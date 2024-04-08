@@ -36,7 +36,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       });
     });
   } else if (message.message === "options") {
-    chrome.runtime.openOptionsPage();
+    chrome.tabs.create({ url: chrome.runtime.getURL("options.html") });
   }
   return true;
+});
+
+chrome.tabs.onUpdated.addListener((_, changeInfo, tab) => {
+  if (tab.active && changeInfo.status === "loading") {
+    chrome.storage.local.get("state", (result) => {
+      const state = result.state || {};
+      state.InSelectMode = false;
+      if (tab.url) {
+        state.currentUrl = tab.url;
+      }
+      chrome.storage.local.set({ state });
+    });
+  }
 });

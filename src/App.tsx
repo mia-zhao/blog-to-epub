@@ -6,20 +6,26 @@ function App() {
   const [inSelectMode, setInSelectMode] = useState(false);
   const [isGenerateReady, setIsGenerateReady] = useState(false);
 
-  chrome.storage.local.get("state", function (result) {
-    console.log(result);
-    const state = result.state || {};
-    if (state.currentUrl) {
-      setIsGenerateReady(true);
-    }
-  });
+  useEffect(() => {
+    if (!isContentScriptReady) return;
+    chrome.storage.local.get("state", function (result) {
+      const state = result.state || {};
+      setInSelectMode(state.InSelectMode || false);
+    });
+  }, [isContentScriptReady]);
 
-  console.log(inSelectMode);
-
-  chrome.storage.local.get("state", function (result) {
-    const state = result.state || {};
-    setInSelectMode(state.InSelectMode || false);
-  });
+  useEffect(() => {
+    chrome.storage.local.get("state", function (result) {
+      console.log(result);
+      const state = result.state || {};
+      if (state.currentUrl) {
+        chrome.storage.local.get(state.currentUrl, function (result) {
+          const data = result[state.currentUrl] || [];
+          setIsGenerateReady(data.length > 0);
+        });
+      }
+    });
+  }, [inSelectMode]);
 
   useEffect(() => {
     chrome.runtime.sendMessage(
@@ -59,28 +65,40 @@ function App() {
   };
 
   const openOptions = () => {
+    enterDeselectMode();
+
     chrome.runtime.sendMessage({ message: "options" });
   };
 
   if (!isContentScriptReady) {
-    return <div>Loading content script ...</div>;
+    return (
+      <div className="flex justify-center">
+        <span className="loading loading-spinner loading-sm"></span>
+      </div>
+    );
   }
 
   return (
     <>
-      {!inSelectMode ? (
-        <button className="cta" onClick={enterSelectMode}>
-          <span className="cta-text">Select Articles</span>
+      <div className="button-container">
+        {!inSelectMode ? (
+          <button className="btn btn-ghost cta" onClick={enterSelectMode}>
+            <span className="cta-text">Select Articles</span>
+          </button>
+        ) : (
+          <button className="btn btn-ghost cta" onClick={enterDeselectMode}>
+            <span className="cta-text">Exit Select Mode</span>
+          </button>
+        )}
+        <button
+          className="btn btn-ghost cta"
+          onClick={openOptions}
+          disabled={!isGenerateReady}
+        >
+          <span className="cta-text">Generate Epub</span>
+          <span className="material-symbols-outlined">open_in_new</span>
         </button>
-      ) : (
-        <button className="cta" onClick={enterDeselectMode}>
-          <span className="cta-text">Exit Select Mode</span>
-        </button>
-      )}
-      <button className="cta" onClick={openOptions} disabled={!isGenerateReady}>
-        <span className="cta-text">Generate Epub</span>
-        <span className="material-symbols-outlined">open_in_new</span>
-      </button>
+      </div>
     </>
   );
 }

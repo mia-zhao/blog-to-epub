@@ -14,8 +14,8 @@ function Options() {
   useEffect(() => {
     chrome.storage.local.get("state", (result) => {
       const state = result.state || {};
+      setCurrentHome(state.currentUrl);
       chrome.storage.local.get(state.currentUrl, (result) => {
-        setCurrentHome(state.currentUrl);
         setData(result[state.currentUrl] || []);
         setSelectedUrls([]);
       });
@@ -27,6 +27,8 @@ function Options() {
       setHomeList(result.home_list || []);
     });
   }, []);
+
+  console.log(currentHome);
 
   useEffect(() => {
     chrome.storage.local.get(currentHome, (result) => {
@@ -98,65 +100,92 @@ function Options() {
       const newData = currentData.filter(
         (val: URLInfo) => !selectedUrls.includes(val.url)
       );
+      console.log(newData);
       chrome.storage.local.set({ [currentHome]: newData }, () => {
         setData(newData);
         setSelectedUrls([]);
       });
+      if (newData.length === 0) {
+        chrome.storage.local.remove(currentHome);
+        chrome.storage.local.get("home_list", (result) => {
+          const list = result.home_list || [];
+          const newList = list.filter((url: string) => url !== currentHome);
+          chrome.storage.local.set({ [currentHome]: newData }, () => {
+            setHomeList(newList);
+          });
+        });
+      }
     });
   };
 
   return (
     <>
-      <select onChange={selectHome} value={currentHome}>
-        {homeList.map((url, idx) => (
-          <option key={idx} value={url}>
-            {url}
-          </option>
-        ))}
-      </select>
-      {isSelected && (
-        <>
-          <button onClick={deleteSelected}>Delete Selected</button>{" "}
-          <button onClick={download}>Download Epub</button>
-        </>
-      )}
-
-      <table>
-        <thead>
-          <tr>
-            <td>
-              <div className="form-control">
-                <label className="label cursor-pointer">
+      <div className="border-b p-8 flex items-center">
+        <label className="flex items-center">
+          <div>
+            <span className="label-text mr-4">Homepage URL</span>
+          </div>
+          <select
+            className="select select-bordered"
+            onChange={selectHome}
+            value={currentHome}
+          >
+            {homeList.map((url, idx) => (
+              <option key={idx} value={url}>
+                {url}
+              </option>
+            ))}
+          </select>
+        </label>
+        {isSelected && (
+          <>
+            <button className="btn ml-8" onClick={deleteSelected}>
+              Delete Selected
+            </button>
+            <button className="btn ml-8" onClick={download}>
+              Download Epub
+            </button>
+          </>
+        )}
+      </div>
+      <div className="overflow-x-auto p-4">
+        <table className="table">
+          <thead>
+            <tr>
+              <th className="flex">
+                <label className="flex items-center">
                   <input
                     type="checkbox"
+                    className="checkbox"
                     checked={selectAll}
-                    className="checkbox checkbox-primary"
                     onChange={() => toggleAll(selectAll)}
                   />
-                  <span className="label-text">Select All</span>
                 </label>
-              </div>
-            </td>
-            <td>Title</td>
-            <td>URL</td>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((val, idx) => (
-            <tr key={idx}>
-              <td>
-                <input
-                  type="checkbox"
-                  checked={selectedUrls.includes(val.url)}
-                  onChange={() => toggleCheck(idx)}
-                />
-              </td>
-              <td>{val.title}</td>
-              <td>{val.url}</td>
+              </th>
+              <th>Title</th>
+              <th>URL</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {data.map((val, idx) => (
+              <tr key={idx}>
+                <th>
+                  <label>
+                    <input
+                      type="checkbox"
+                      className="checkbox"
+                      checked={selectedUrls.includes(val.url)}
+                      onChange={() => toggleCheck(idx)}
+                    />
+                  </label>
+                </th>
+                <td>{val.title}</td>
+                <td>{val.url}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </>
   );
 }

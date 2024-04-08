@@ -237,6 +237,7 @@ function updateList(listElements: HTMLElement[]) {
     const text = getText(element);
     if (href != null) {
       const url = new URL(href, document.URL);
+      if (info.some((item) => item.url === url.href)) return;
       info.push({ url: url.href, title: text });
     }
   });
