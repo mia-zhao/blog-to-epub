@@ -82,16 +82,16 @@ function App() {
     <>
       <div className="button-container">
         {!inSelectMode ? (
-          <button className="btn btn-ghost cta" onClick={enterSelectMode}>
+          <button className="btn btn-block cta" onClick={enterSelectMode}>
             <span className="cta-text">Select Articles</span>
           </button>
         ) : (
-          <button className="btn btn-ghost cta" onClick={enterDeselectMode}>
+          <button className="btn btn-block cta" onClick={enterDeselectMode}>
             <span className="cta-text">Exit Select Mode</span>
           </button>
         )}
         <button
-          className="btn btn-ghost cta"
+          className="btn btn-block cta mt-4 disabled:bg-base-300"
           onClick={openOptions}
           disabled={!isGenerateReady}
         >

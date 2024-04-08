@@ -110,7 +110,7 @@ function Options() {
         chrome.storage.local.get("home_list", (result) => {
           const list = result.home_list || [];
           const newList = list.filter((url: string) => url !== currentHome);
-          chrome.storage.local.set({ [currentHome]: newData }, () => {
+          chrome.storage.local.set({ home_list: newList }, () => {
             setHomeList(newList);
           });
         });
@@ -139,10 +139,13 @@ function Options() {
         </label>
         {isSelected && (
           <>
-            <button className="btn ml-8" onClick={deleteSelected}>
+            <button
+              className="btn btn-outline btn-error ml-8"
+              onClick={deleteSelected}
+            >
               Delete Selected
             </button>
-            <button className="btn ml-8" onClick={download}>
+            <button className="btn btn-neutral ml-8" onClick={download}>
               Download Epub
             </button>
           </>
