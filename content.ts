@@ -208,9 +208,9 @@ function handleOverlay() {
 }
 
 function updateList(listElements: HTMLElement[]) {
-  const urls: string[] = [];
+  const info: { url: string; title: string }[] = [];
 
-  function getHref(element: HTMLElement): string {
+  const getHref = (element: HTMLElement): string => {
     const href = element.getAttribute("href");
     if (href) {
       return href;
@@ -219,17 +219,29 @@ function updateList(listElements: HTMLElement[]) {
       return getHref(element.parentElement);
     }
     return "";
-  }
+  };
+
+  const getText = (element: HTMLElement): string => {
+    const text = element.innerText;
+    if (text) {
+      return text;
+    }
+    if (element.parentElement) {
+      return getText(element.parentElement);
+    }
+    return "";
+  };
 
   listElements.forEach((element) => {
     const href = getHref(element);
+    const text = getText(element);
     if (href != null) {
       const url = new URL(href, document.URL);
-      urls.push(url.href);
+      info.push({ url: url.href, title: text });
     }
   });
 
-  console.log(urls.length);
+  console.log(info.length);
 
   chrome.storage.local.get("home_list", (result) => {
     const home_list = result.home_list || [];
@@ -237,7 +249,7 @@ function updateList(listElements: HTMLElement[]) {
     chrome.storage.local.set({ home_list: [...new Set(home_list)] });
   });
 
-  chrome.storage.local.set({ [document.URL]: urls });
+  chrome.storage.local.set({ [document.URL]: info });
   chrome.storage.local.get("state", (result) => {
     const state = result.state || {};
     state.currentUrl = document.URL;

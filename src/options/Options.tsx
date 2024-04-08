@@ -3,7 +3,7 @@ import { ChangeEvent, useEffect, useState } from "react";
 function Options() {
   const [homeList, setHomeList] = useState<string[]>([]);
   const [currentHome, setCurrentHome] = useState("");
-  const [data, setData] = useState<string[]>([]);
+  const [data, setData] = useState<{ url: string; title: string }[]>([]);
 
   const [selectAll, setSelectAll] = useState(false);
   const [selectedUrls, setSelectedUrls] = useState<string[]>([]);
@@ -35,7 +35,7 @@ function Options() {
   }, [currentHome]);
 
   useEffect(() => {
-    if (data.every((url) => selectedUrls.includes(url))) {
+    if (data.every((val) => selectedUrls.includes(val.url))) {
       setSelectAll(true);
     } else {
       setSelectAll(false);
@@ -43,12 +43,12 @@ function Options() {
   }, [selectedUrls]);
 
   const toggleCheck = (idx: number) => {
-    if (selectedUrls.includes(data[idx])) {
+    if (selectedUrls.includes(data[idx].url)) {
       // remove the url from selectedUrls
-      setSelectedUrls((prev) => prev.filter((url) => url !== data[idx]));
+      setSelectedUrls((prev) => prev.filter((url) => url !== data[idx].url));
     } else {
       // add the url to selectedUrls
-      setSelectedUrls((prev) => [...prev, data[idx]]);
+      setSelectedUrls((prev) => [...prev, data[idx].url]);
     }
   };
 
@@ -57,7 +57,7 @@ function Options() {
     if (state) {
       setSelectedUrls([]);
     } else {
-      setSelectedUrls(data);
+      setSelectedUrls(data.map((val) => val.url));
     }
   };
 
@@ -110,20 +110,22 @@ function Options() {
               />
               Select All
             </td>
-            <td></td>
+            <td>Title</td>
+            <td>URL</td>
           </tr>
         </thead>
         <tbody>
-          {data.map((url, idx) => (
+          {data.map((val, idx) => (
             <tr key={idx}>
               <td>
                 <input
                   type="checkbox"
-                  checked={selectedUrls.includes(url)}
+                  checked={selectedUrls.includes(val.url)}
                   onChange={() => toggleCheck(idx)}
                 />
               </td>
-              <td>{url}</td>
+              <td>{val.title}</td>
+              <td>{val.url}</td>
             </tr>
           ))}
         </tbody>
