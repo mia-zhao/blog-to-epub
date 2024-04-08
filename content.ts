@@ -231,6 +231,12 @@ function updateList(listElements: HTMLElement[]) {
 
   console.log(urls.length);
 
+  chrome.storage.local.get("home_list", (result) => {
+    const home_list = result.home_list || [];
+    home_list.push(document.URL);
+    chrome.storage.local.set({ home_list: [...new Set(home_list)] });
+  });
+
   chrome.storage.local.set({ [document.URL]: urls });
   chrome.storage.local.get("state", (result) => {
     const state = result.state || {};
