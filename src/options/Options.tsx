@@ -1,6 +1,13 @@
 import { ChangeEvent, useEffect, useState } from "react";
 import { URLInfo } from "../storage";
 
+enum DownloadStatus {
+  NONE,
+  DOWNLOADING,
+  ERROR,
+  DOWNLOADED,
+}
+
 function Options() {
   const [homeList, setHomeList] = useState<string[]>([]);
   const [currentHome, setCurrentHome] = useState("");
@@ -8,6 +15,10 @@ function Options() {
 
   const [selectAll, setSelectAll] = useState(false);
   const [selectedUrls, setSelectedUrls] = useState<string[]>([]);
+
+  const [downloadStatus, setDownloadStatus] = useState<DownloadStatus>(
+    DownloadStatus.NONE
+  );
 
   const isSelected = selectedUrls.length > 0;
 
@@ -80,18 +91,30 @@ function Options() {
       window.URL.revokeObjectURL(url);
     };
 
-    // post fetch request to backend
-    const response = await fetch("http://localhost:3000/epub", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        urls: selectedUrls,
-      }),
-    });
-    const blob = await response.blob();
-    downloadBlob(blob, "epub.epub");
+    setDownloadStatus(DownloadStatus.DOWNLOADING);
+
+    try {
+      // post fetch request to backend
+      const response = await fetch("http://localhost:3000/epub", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          urls: selectedUrls,
+        }),
+      });
+      const blob = await response.blob();
+      downloadBlob(blob, "epub.epub");
+      setDownloadStatus(DownloadStatus.DOWNLOADED);
+    } catch (e) {
+      console.error(e);
+      setDownloadStatus(DownloadStatus.ERROR);
+    } finally {
+      setTimeout(() => {
+        setDownloadStatus(DownloadStatus.NONE);
+      }, 3000);
+    }
   };
 
   const deleteSelected = () => {
@@ -189,6 +212,27 @@ function Options() {
           </tbody>
         </table>
       </div>
+      {downloadStatus === DownloadStatus.DOWNLOADING && (
+        <div className="toast toast-start">
+          <div className="alert alert-info">
+            <span>Epub downloading ...</span>
+          </div>
+        </div>
+      )}
+      {downloadStatus === DownloadStatus.DOWNLOADED && (
+        <div className="toast toast-start">
+          <div className="alert alert-success">
+            <span>Epub successfully downloaded.</span>
+          </div>
+        </div>
+      )}
+      {downloadStatus === DownloadStatus.ERROR && (
+        <div className="toast toast-start">
+          <div className="alert alert-error">
+            <span>Oops, there has been error.</span>
+          </div>
+        </div>
+      )}
     </>
   );
 }
