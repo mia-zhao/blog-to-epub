@@ -132,6 +132,7 @@ function Options() {
           const newList = list.filter((url: string) => url !== currentHome);
           chrome.storage.local.set({ home_list: newList }, () => {
             setHomeList(newList);
+            setCurrentHome(newList[0] || "");
           });
         });
       }
@@ -142,14 +143,22 @@ function Options() {
     <>
       <div className="border-b p-8 flex items-center">
         <label className="flex items-center">
-          <div>
-            <span className="label-text mr-4">Homepage URL</span>
+          <div className="flex items-center mr-4 min-w-[140px]">
+            <span className="label-text mr-2">Homepage URL</span>
+            <a className="flex items-center" href={currentHome} target="_blank">
+              <span className="material-symbols-outlined m-auto">
+                open_in_new
+              </span>
+            </a>
           </div>
           <select
-            className="select select-bordered"
+            className="select select-bordered w-full max-w-lg"
             onChange={selectHome}
             value={currentHome}
           >
+            <option disabled value="">
+              please select a url
+            </option>
             {homeList.map((url, idx) => (
               <option key={idx} value={url}>
                 {url}
