@@ -16,6 +16,9 @@ function Options() {
   const [selectAll, setSelectAll] = useState(false);
   const [selectedUrls, setSelectedUrls] = useState<string[]>([]);
 
+  const [isLinkVisible, setIsLinkVisible] = useState(false);
+  const [getImageOffline, setGetImageOffline] = useState(false);
+
   const [downloadStatus, setDownloadStatus] = useState<DownloadStatus>(
     DownloadStatus.NONE
   );
@@ -100,6 +103,8 @@ function Options() {
         },
         body: JSON.stringify({
           urls: selectedUrls,
+          includeHyperlinks: isLinkVisible,
+          includeOfflineImages: getImageOffline,
         }),
       });
       const blob = await response.blob();
@@ -177,6 +182,51 @@ function Options() {
             <button className="btn btn-neutral ml-8" onClick={download}>
               Download Epub
             </button>
+            <button
+              className="flex ml-4"
+              onClick={() =>
+                (
+                  document.getElementById("settings_modal") as HTMLDialogElement
+                )?.showModal()
+              }
+            >
+              <span className="material-symbols-outlined">settings</span>
+            </button>
+            <dialog id="settings_modal" className="modal">
+              <div className="modal-box">
+                <h3 className="font-bold text-lg">Settings</h3>
+                <div className="form-control">
+                  <label className="label cursor-pointer">
+                    <span className="label-text">
+                      Enable Hyperlink Visibility
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={isLinkVisible}
+                      className="checkbox"
+                      onChange={() => setIsLinkVisible(!isLinkVisible)}
+                    />
+                  </label>
+                  <label className="label cursor-pointer">
+                    <span className="label-text">
+                      Preprocess Images for Offline Use
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={getImageOffline}
+                      className="checkbox"
+                      onChange={() => setGetImageOffline(!getImageOffline)}
+                    />
+                  </label>
+                </div>
+                <div className="modal-action">
+                  <form method="dialog">
+                    {/* if there is a button in form, it will close the modal */}
+                    <button className="btn">Close</button>
+                  </form>
+                </div>
+              </div>
+            </dialog>
           </>
         )}
       </div>
