@@ -12,6 +12,7 @@ function App() {
       const state = result.state || {};
       setInSelectMode(state.InSelectMode || false);
     });
+    chrome.runtime.sendMessage({ message: "get_meta_data" });
   }, [isContentScriptReady]);
 
   useEffect(() => {
@@ -19,7 +20,7 @@ function App() {
       const state = result.state || {};
       if (state.currentUrl) {
         chrome.storage.local.get(state.currentUrl, function (result) {
-          const data = result[state.currentUrl] || [];
+          const data = result[state.currentUrl].info || [];
           setIsGenerateReady(data.length > 0);
         });
       }

@@ -19,8 +19,42 @@ chrome.runtime.onMessage.addListener((message) => {
 
     document.removeEventListener("click", clickListener, true);
     document.removeEventListener("dblclick", dblclickListener);
+  } else if (message.message === "get_meta_data") {
+    const title = getTitle(document);
+    const author = getAuthor(document);
+    chrome.storage.local.get([document.URL], (result) => {
+      const data = result[document.URL];
+      chrome.storage.local.set({ [document.URL]: { ...data, title, author } });
+    });
   }
 });
+
+function getTitle(document: Document): string {
+  return (
+    document.querySelector("title")?.textContent ||
+    document
+      .querySelector('meta[property="og:title"]')
+      ?.getAttribute("content") ||
+    document
+      .querySelector('meta[property="twitter:title"]')
+      ?.getAttribute("content") ||
+    document.querySelector('meta[name="title"]')?.getAttribute("content") ||
+    document.querySelector("h1")?.textContent ||
+    ""
+  );
+}
+
+function getAuthor(document: Document): string {
+  return (
+    document
+      .querySelector('meta[property="author"]')
+      ?.getAttribute("content") ||
+    document
+      .querySelector('meta[property="article:author"]')
+      ?.getAttribute("content") ||
+    ""
+  );
+}
 
 // single click to select and deselect one element
 function clickListener(event: MouseEvent) {
@@ -246,7 +280,11 @@ function updateList(listElements: HTMLElement[]) {
     chrome.storage.local.set({ home_list: [...new Set(home_list)] });
   });
 
-  chrome.storage.local.set({ [document.URL]: info });
+  chrome.storage.local.get([document.URL], (result) => {
+    const data = result[document.URL];
+    chrome.storage.local.set({ [document.URL]: { ...data, info } });
+  });
+
   chrome.storage.local.get("state", (result) => {
     const state = result.state || {};
     state.currentUrl = document.URL;

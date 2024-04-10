@@ -12,6 +12,7 @@ function Options() {
   const [homeList, setHomeList] = useState<string[]>([]);
   const [currentHome, setCurrentHome] = useState("");
   const [data, setData] = useState<URLInfo[]>([]);
+  const [meta, setMeta] = useState({ title: "", author: "" });
 
   const [selectAll, setSelectAll] = useState(false);
   const [selectedUrls, setSelectedUrls] = useState<string[]>([]);
@@ -30,7 +31,7 @@ function Options() {
       const state = result.state || {};
       setCurrentHome(state.currentUrl);
       chrome.storage.local.get(state.currentUrl, (result) => {
-        setData(result[state.currentUrl] || []);
+        setData(result[state.currentUrl].info || []);
         setSelectedUrls([]);
       });
     });
@@ -45,9 +46,13 @@ function Options() {
   useEffect(() => {
     chrome.storage.local.get(currentHome, (result) => {
       if (!result[currentHome]) return;
-      setData(result[currentHome]);
+      setData(result[currentHome].info || []);
       setSelectedUrls([]);
       setSelectAll(false);
+      setMeta({
+        title: result[currentHome].title,
+        author: result[currentHome].author,
+      });
     });
   }, [currentHome]);
 
@@ -92,6 +97,17 @@ function Options() {
       window.URL.revokeObjectURL(url);
     };
 
+    const getTimeStamp = () => {
+      const currentDate = new Date();
+      const year = currentDate.getFullYear();
+      const month = String(currentDate.getMonth() + 1).padStart(2, "0");
+      const day = String(currentDate.getDate()).padStart(2, "0");
+      const hours = String(currentDate.getHours()).padStart(2, "0");
+      const minutes = String(currentDate.getMinutes()).padStart(2, "0");
+
+      return `${year}${month}${day}${hours}${minutes}`;
+    };
+
     setDownloadStatus(DownloadStatus.DOWNLOADING);
 
     try {
@@ -105,10 +121,12 @@ function Options() {
           urls: selectedUrls,
           includeHyperlinks: isLinkVisible,
           includeOfflineImages: getImageOffline,
+          title: meta.title,
+          author: meta.author,
         }),
       });
       const blob = await response.blob();
-      downloadBlob(blob, "epub.epub");
+      downloadBlob(blob, `${meta.title || "blog"}_${getTimeStamp()}.epub`);
       setDownloadStatus(DownloadStatus.DOWNLOADED);
     } catch (e) {
       console.error(e);
@@ -122,14 +140,17 @@ function Options() {
 
   const deleteSelected = () => {
     chrome.storage.local.get(currentHome, (result) => {
-      const currentData = result[currentHome];
+      const currentData = result[currentHome].info || [];
       const newData = currentData.filter(
         (val: URLInfo) => !selectedUrls.includes(val.url)
       );
-      chrome.storage.local.set({ [currentHome]: newData }, () => {
-        setData(newData);
-        setSelectedUrls([]);
-      });
+      chrome.storage.local.set(
+        { [currentHome]: { ...result[currentHome], info: newData } },
+        () => {
+          setData(newData);
+          setSelectedUrls([]);
+        }
+      );
       if (newData.length === 0) {
         chrome.storage.local.remove(currentHome);
         chrome.storage.local.get("home_list", (result) => {
