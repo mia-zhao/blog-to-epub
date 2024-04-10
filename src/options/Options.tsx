@@ -110,9 +110,10 @@ function Options() {
 
     setDownloadStatus(DownloadStatus.DOWNLOADING);
 
+    const apiServer = `${import.meta.env.VITE_SERVER_API_URL}/epub`;
     try {
       // post fetch request to backend
-      const response = await fetch("http://localhost:3000/epub", {
+      const response = await fetch(`${apiServer}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
