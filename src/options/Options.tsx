@@ -167,7 +167,7 @@ function Options() {
 
   return (
     <>
-      <div className="border-b p-8 flex items-center">
+      <div className="border-b p-8 flex items-center nav">
         <label className="flex items-center">
           <div className="flex items-center mr-4 min-w-[140px]">
             <span className="label-text mr-2">Homepage URL</span>
@@ -251,65 +251,69 @@ function Options() {
           </>
         )}
       </div>
-      <div className="overflow-x-auto p-4">
-        <table className="table">
-          <thead>
-            <tr>
-              <th className="flex">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    className="checkbox"
-                    checked={selectAll}
-                    onChange={() => toggleAll(selectAll)}
-                  />
-                </label>
-              </th>
-              <th>Title</th>
-              <th>URL</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((val, idx) => (
-              <tr key={idx}>
-                <th>
-                  <label>
+      <div className="main">
+        <div className="overflow-x-auto p-4">
+          <table className="table">
+            <thead>
+              <tr>
+                <th className="flex">
+                  <label className="flex items-center">
                     <input
                       type="checkbox"
                       className="checkbox"
-                      checked={selectedUrls.includes(val.url)}
-                      onChange={() => toggleCheck(idx)}
+                      checked={selectAll}
+                      onChange={() => toggleAll(selectAll)}
                     />
                   </label>
                 </th>
-                <td>{val.title}</td>
-                <td>{val.url}</td>
+                <th>Title</th>
+                <th>URL</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="overflow-y-auto">
+              {data.map((val, idx) => (
+                <tr key={idx}>
+                  <th>
+                    <label>
+                      <input
+                        type="checkbox"
+                        className="checkbox"
+                        checked={selectedUrls.includes(val.url)}
+                        onChange={() => toggleCheck(idx)}
+                      />
+                    </label>
+                  </th>
+                  <td>{val.title}</td>
+                  <td>{val.url}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {downloadStatus === DownloadStatus.DOWNLOADING && (
+          <div className="toast toast-top toast-end">
+            <div className="alert alert-info">
+              <span>Epub downloading ...</span>
+            </div>
+          </div>
+        )}
+        {downloadStatus === DownloadStatus.DOWNLOADED && (
+          <div className="toast toast-top toast-end">
+            <div className="alert alert-success">
+              <span>Epub successfully downloaded.</span>
+            </div>
+          </div>
+        )}
+        {downloadStatus === DownloadStatus.ERROR && (
+          <div className="toast toast-top toast-end">
+            <div className="alert alert-error">
+              <span>
+                Oops, there has been an error. Please try again later.
+              </span>
+            </div>
+          </div>
+        )}
       </div>
-      {downloadStatus === DownloadStatus.DOWNLOADING && (
-        <div className="toast toast-start">
-          <div className="alert alert-info">
-            <span>Epub downloading ...</span>
-          </div>
-        </div>
-      )}
-      {downloadStatus === DownloadStatus.DOWNLOADED && (
-        <div className="toast toast-start">
-          <div className="alert alert-success">
-            <span>Epub successfully downloaded.</span>
-          </div>
-        </div>
-      )}
-      {downloadStatus === DownloadStatus.ERROR && (
-        <div className="toast toast-start">
-          <div className="alert alert-error">
-            <span>Oops, there has been an error. Please try again later.</span>
-          </div>
-        </div>
-      )}
     </>
   );
 }

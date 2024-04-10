@@ -8,3 +8,34 @@
         scrollbar-gutter: auto !important;
     }
 }
+
+body {
+    height: 100vh;
+}
+
+#options {
+    height: 100%;
+}
+
+div.nav {
+    height: 112px;
+}
+
+div.main {
+    height: calc(100vh - 112px);
+    overflow-y: auto;
+}
+
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px
+}
+
+::-webkit-scrollbar-track {
+    background-color: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: #ddd;
+    border-radius: 4px;
+}
