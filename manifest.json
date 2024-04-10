@@ -2,6 +2,11 @@
   "manifest_version": 3,
   "name": "Blog to Epub",
   "version": "0.0.1",
+  "icons": {
+    "16": "public/icon-16.png",
+    "48": "public/icon-48.png",
+    "128": "public/icon-128.png"
+  },
   "action": { "default_popup": "index.html" },
   "permissions": ["activeTab", "scripting", "storage"],
   "background": {
