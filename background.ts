@@ -55,7 +55,29 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true;
 });
 
+chrome.tabs.onActivated.addListener((activeInfo) => {
+  chrome.tabs.get(activeInfo.tabId, function (tab) {
+    if (
+      tab.url?.startsWith("chrome://") ||
+      tab.url?.startsWith("chrome-extension://")
+    )
+      return;
+    chrome.storage.local.get("state", (result) => {
+      const state = result.state || {};
+      if (tab.url) {
+        state.currentUrl = tab.url;
+      }
+      chrome.storage.local.set({ state });
+    });
+  });
+});
+
 chrome.tabs.onUpdated.addListener((_, changeInfo, tab) => {
+  if (
+    tab.url?.startsWith("chrome://") ||
+    tab.url?.startsWith("chrome-extension://")
+  )
+    return;
   if (tab.active && changeInfo.status === "loading") {
     chrome.storage.local.get("state", (result) => {
       const state = result.state || {};

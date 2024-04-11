@@ -8,7 +8,7 @@
     "128": "public/icon-128.png"
   },
   "action": { "default_popup": "index.html" },
-  "permissions": ["activeTab", "scripting", "storage"],
+  "permissions": ["activeTab", "tabs", "scripting", "storage"],
   "background": {
     "service_worker": "background.ts",
     "type": "module"

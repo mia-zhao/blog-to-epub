@@ -30,6 +30,19 @@ function App() {
   }, [inSelectMode]);
 
   useEffect(() => {
+    chrome.storage.local.get("state", function (result) {
+      const state = result.state || {};
+      if (state.currentUrl) {
+        chrome.storage.local.get(state.currentUrl, function (result) {
+          const currentResult = result[state.currentUrl] || {};
+          const data = currentResult.info || [];
+          setIsGenerateReady(data.length > 0);
+        });
+      }
+    });
+  }, []);
+
+  useEffect(() => {
     chrome.runtime.sendMessage(
       { message: "activate" },
       function ({ response }) {
