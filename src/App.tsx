@@ -20,7 +20,8 @@ function App() {
       const state = result.state || {};
       if (state.currentUrl) {
         chrome.storage.local.get(state.currentUrl, function (result) {
-          const data = result[state.currentUrl].info || [];
+          const currentResult = result[state.currentUrl] || {};
+          const data = currentResult.info || [];
           setIsGenerateReady(data.length > 0);
         });
       }

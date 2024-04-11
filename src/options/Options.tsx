@@ -31,7 +31,8 @@ function Options() {
       const state = result.state || {};
       setCurrentHome(state.currentUrl);
       chrome.storage.local.get(state.currentUrl, (result) => {
-        setData(result[state.currentUrl].info || []);
+        const currentResult = result[state.currentUrl] || {};
+        setData(currentResult.info || []);
         setSelectedUrls([]);
       });
     });
@@ -46,7 +47,8 @@ function Options() {
   useEffect(() => {
     chrome.storage.local.get(currentHome, (result) => {
       if (!result[currentHome]) return;
-      setData(result[currentHome].info || []);
+      const currentResult = result[currentHome] || {};
+      setData(currentResult.info || []);
       setSelectedUrls([]);
       setSelectAll(false);
       setMeta({
@@ -110,10 +112,9 @@ function Options() {
 
     setDownloadStatus(DownloadStatus.DOWNLOADING);
 
-    const apiServer = `${import.meta.env.VITE_SERVER_API_URL}/epub`;
     try {
       // post fetch request to backend
-      const response = await fetch(`${apiServer}`, {
+      const response = await fetch("https://blog-to-epub.zeabur.app/epub", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -141,7 +142,8 @@ function Options() {
 
   const deleteSelected = () => {
     chrome.storage.local.get(currentHome, (result) => {
-      const currentData = result[currentHome].info || [];
+      const currentResult = result[currentHome] || {};
+      const currentData = currentResult.info || [];
       const newData = currentData.filter(
         (val: URLInfo) => !selectedUrls.includes(val.url)
       );
