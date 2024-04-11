@@ -98,6 +98,13 @@ function App() {
           <span className="cta-text">Generate Epub</span>
           <span className="material-symbols-outlined">open_in_new</span>
         </button>
+        <a
+          className="link link-success text-lg text-center mt-4"
+          href="https://forms.gle/RjyEXHSpriYWRRz3A"
+          target="_blank"
+        >
+          Share Feedback
+        </a>
       </div>
     </>
   );

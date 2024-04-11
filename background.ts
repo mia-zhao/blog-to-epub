@@ -60,3 +60,9 @@ chrome.tabs.onUpdated.addListener((_, changeInfo, tab) => {
     });
   }
 });
+
+chrome.runtime.onInstalled.addListener((details) => {
+  if (details.reason === chrome.runtime.OnInstalledReason.INSTALL) {
+    chrome.runtime.setUninstallURL("https://forms.gle/RjyEXHSpriYWRRz3A");
+  }
+});
