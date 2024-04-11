@@ -13,6 +13,7 @@ function App() {
       setInSelectMode(state.InSelectMode || false);
     });
     chrome.runtime.sendMessage({ message: "get_meta_data" });
+    chrome.runtime.sendMessage({ message: "get_state" });
   }, [isContentScriptReady]);
 
   useEffect(() => {

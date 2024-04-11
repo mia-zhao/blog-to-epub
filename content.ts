@@ -26,6 +26,12 @@ chrome.runtime.onMessage.addListener((message) => {
       const data = result[document.URL];
       chrome.storage.local.set({ [document.URL]: { ...data, title, author } });
     });
+  } else if (message.message === "get_state") {
+    chrome.storage.local.get("state", (result) => {
+      const state = result.state || {};
+      state.currentUrl = document.URL;
+      chrome.storage.local.set({ state });
+    });
   }
 });
 
@@ -283,11 +289,5 @@ function updateList(listElements: HTMLElement[]) {
   chrome.storage.local.get([document.URL], (result) => {
     const data = result[document.URL];
     chrome.storage.local.set({ [document.URL]: { ...data, info } });
-  });
-
-  chrome.storage.local.get("state", (result) => {
-    const state = result.state || {};
-    state.currentUrl = document.URL;
-    chrome.storage.local.set({ state });
   });
 }
