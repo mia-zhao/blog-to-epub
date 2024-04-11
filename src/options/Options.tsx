@@ -202,7 +202,7 @@ function Options() {
               Delete Selected
             </button>
             <button className="btn btn-neutral ml-8" onClick={download}>
-              Download Epub
+              Download EPUB
             </button>
             <button
               className="flex ml-4"
@@ -294,14 +294,14 @@ function Options() {
         {downloadStatus === DownloadStatus.DOWNLOADING && (
           <div className="toast toast-top toast-end">
             <div className="alert alert-info">
-              <span>Epub downloading ...</span>
+              <span>EPUB downloading ...</span>
             </div>
           </div>
         )}
         {downloadStatus === DownloadStatus.DOWNLOADED && (
           <div className="toast toast-top toast-end">
             <div className="alert alert-success">
-              <span>Epub successfully downloaded.</span>
+              <span>EPUB successfully downloaded.</span>
             </div>
           </div>
         )}

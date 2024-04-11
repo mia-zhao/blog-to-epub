@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Blog to Epub",
+  "name": "Blog to EPUB",
   "version": "0.0.1",
   "icons": {
     "16": "public/icon-16.png",

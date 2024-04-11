@@ -95,7 +95,7 @@ function App() {
           onClick={openOptions}
           disabled={!isGenerateReady}
         >
-          <span className="cta-text">Generate Epub</span>
+          <span className="cta-text">Generate EPUB</span>
           <span className="material-symbols-outlined">open_in_new</span>
         </button>
         <a

@@ -19,7 +19,7 @@ body {
   margin: 0;
   display: flex;
   place-items: center;
-  min-width: 220px;
+  min-width: 230px;
   min-height: 100vh;
 }
 

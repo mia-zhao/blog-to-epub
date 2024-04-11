@@ -1,3 +1,3 @@
-# Blog to Epub
+# Blog to EPUB
 
-A chrome extension to convert blogs to Epub easily.
+A chrome extension to convert blogs to EPUB easily.
