@@ -1,210 +1,197 @@
-import { ChangeEvent, useEffect, useState } from "react";
-import { URLInfo } from "../storage";
+import { ChangeEvent, useEffect, useState } from "react"
+
+import "./style.css"
 
 enum DownloadStatus {
   NONE,
   DOWNLOADING,
   ERROR,
-  DOWNLOADED,
+  DOWNLOADED
+}
+
+interface URLInfo {
+  url: string
+  title: string
 }
 
 function Options() {
-  const [homeList, setHomeList] = useState<string[]>([]);
-  const [currentHome, setCurrentHome] = useState("");
-  const [data, setData] = useState<URLInfo[]>([]);
-  const [meta, setMeta] = useState({ title: "", author: "" });
+  const [homeList, setHomeList] = useState<string[]>([])
+  const [currentHome, setCurrentHome] = useState("")
+  const [data, setData] = useState<URLInfo[]>([])
+  const [meta, setMeta] = useState({ title: "", author: "" })
 
-  const [selectAll, setSelectAll] = useState(false);
-  const [selectedUrls, setSelectedUrls] = useState<string[]>([]);
+  const [selectAll, setSelectAll] = useState(false)
+  const [selectedUrls, setSelectedUrls] = useState<string[]>([])
 
-  const [isLinkVisible, setIsLinkVisible] = useState(false);
-  const [getImageOffline, setGetImageOffline] = useState(false);
+  const [isLinkVisible, setIsLinkVisible] = useState(false)
+  const [getImageOffline, setGetImageOffline] = useState(false)
 
   const [downloadStatus, setDownloadStatus] = useState<DownloadStatus>(
     DownloadStatus.NONE
-  );
+  )
 
-  const isSelected = selectedUrls.length > 0;
+  const isSelected = selectedUrls.length > 0
 
   useEffect(() => {
     chrome.storage.local.get("state", (result) => {
-      const state = result.state || {};
-      setCurrentHome(state.currentUrl);
+      const state = result.state || {}
+      setCurrentHome(state.currentUrl)
       chrome.storage.local.get(state.currentUrl, (result) => {
-        const currentResult = result[state.currentUrl] || {};
-        setData(currentResult.info || []);
-        setSelectedUrls([]);
-      });
-    });
-  }, []);
+        const currentResult = result[state.currentUrl] || {}
+        setData(currentResult.info || [])
+        setSelectedUrls([])
+      })
+    })
+  }, [])
 
   useEffect(() => {
     chrome.storage.local.get("home_list", (result) => {
-      setHomeList(result.home_list || []);
-    });
-  }, []);
+      setHomeList(result.home_list || [])
+    })
+  }, [])
 
   useEffect(() => {
     chrome.storage.local.get(currentHome, (result) => {
-      if (!result[currentHome]) return;
-      const currentResult = result[currentHome] || {};
-      setData(currentResult.info || []);
-      setSelectedUrls([]);
-      setSelectAll(false);
+      if (!result[currentHome]) return
+      const currentResult = result[currentHome] || {}
+      setData(currentResult.info || [])
+      setSelectedUrls([])
+      setSelectAll(false)
       setMeta({
         title: result[currentHome].title,
-        author: result[currentHome].author,
-      });
-    });
-  }, [currentHome]);
+        author: result[currentHome].author
+      })
+    })
+  }, [currentHome])
 
   useEffect(() => {
     if (data.every((val) => selectedUrls.includes(val.url))) {
-      setSelectAll(true);
+      setSelectAll(true)
     } else {
-      setSelectAll(false);
+      setSelectAll(false)
     }
-  }, [selectedUrls, data]);
+  }, [selectedUrls, data])
 
   const toggleCheck = (idx: number) => {
     if (selectedUrls.includes(data[idx].url)) {
       // remove the url from selectedUrls
-      setSelectedUrls((prev) => prev.filter((url) => url !== data[idx].url));
+      setSelectedUrls((prev) => prev.filter((url) => url !== data[idx].url))
     } else {
       // add the url to selectedUrls
-      setSelectedUrls((prev) => [...prev, data[idx].url]);
+      setSelectedUrls((prev) => [...prev, data[idx].url])
     }
-  };
+  }
 
   const toggleAll = (state: boolean) => {
-    setSelectAll(!state);
+    setSelectAll(!state)
     if (state) {
-      setSelectedUrls([]);
+      setSelectedUrls([])
     } else {
-      setSelectedUrls(data.map((val) => val.url));
+      setSelectedUrls(data.map((val) => val.url))
     }
-  };
+  }
 
   const selectHome = (event: ChangeEvent) => {
-    setCurrentHome((event.target as HTMLSelectElement).value);
-  };
+    setCurrentHome((event.target as HTMLSelectElement).value)
+  }
 
   const download = async () => {
     const downloadBlob = (blob: Blob, filename: string) => {
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      a.click();
-      window.URL.revokeObjectURL(url);
-    };
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = filename
+      a.click()
+      window.URL.revokeObjectURL(url)
+    }
 
     const getTimeStamp = () => {
-      const currentDate = new Date();
-      const year = currentDate.getFullYear();
-      const month = String(currentDate.getMonth() + 1).padStart(2, "0");
-      const day = String(currentDate.getDate()).padStart(2, "0");
-      const hours = String(currentDate.getHours()).padStart(2, "0");
-      const minutes = String(currentDate.getMinutes()).padStart(2, "0");
+      const currentDate = new Date()
+      const year = currentDate.getFullYear()
+      const month = String(currentDate.getMonth() + 1).padStart(2, "0")
+      const day = String(currentDate.getDate()).padStart(2, "0")
+      const hours = String(currentDate.getHours()).padStart(2, "0")
+      const minutes = String(currentDate.getMinutes()).padStart(2, "0")
 
-      return `${year}${month}${day}${hours}${minutes}`;
-    };
+      return `${year}${month}${day}${hours}${minutes}`
+    }
 
-    setDownloadStatus(DownloadStatus.DOWNLOADING);
+    setDownloadStatus(DownloadStatus.DOWNLOADING)
 
     try {
       // post fetch request to backend
       const response = await fetch("https://blog-to-epub.zeabur.app/epub", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           urls: selectedUrls,
           includeHyperlinks: isLinkVisible,
           includeOfflineImages: getImageOffline,
           title: meta.title,
-          author: meta.author,
-        }),
-      });
-      const blob = await response.blob();
-      downloadBlob(blob, `${meta.title || "blog"}_${getTimeStamp()}.epub`);
-      setDownloadStatus(DownloadStatus.DOWNLOADED);
+          author: meta.author
+        })
+      })
+      const blob = await response.blob()
+      downloadBlob(blob, `${meta.title || "blog"}_${getTimeStamp()}.epub`)
+      setDownloadStatus(DownloadStatus.DOWNLOADED)
     } catch (e) {
-      console.error(e);
-      setDownloadStatus(DownloadStatus.ERROR);
-    } finally {
-      setTimeout(() => {
-        setDownloadStatus(DownloadStatus.NONE);
-      }, 3000);
+      console.error(e)
+      setDownloadStatus(DownloadStatus.ERROR)
     }
-  };
+  }
 
   const deleteSelected = () => {
+    const remainingData = data.filter((val) => !selectedUrls.includes(val.url))
+    setData(remainingData)
+    setSelectedUrls([])
     chrome.storage.local.get(currentHome, (result) => {
-      const currentResult = result[currentHome] || {};
-      const currentData = currentResult.info || [];
-      const newData = currentData.filter(
-        (val: URLInfo) => !selectedUrls.includes(val.url)
-      );
-      chrome.storage.local.set(
-        { [currentHome]: { ...result[currentHome], info: newData } },
-        () => {
-          setData(newData);
-          setSelectedUrls([]);
-        }
-      );
-      if (newData.length === 0) {
-        chrome.storage.local.remove(currentHome);
-        chrome.storage.local.get("home_list", (result) => {
-          const list = result.home_list || [];
-          const newList = list.filter((url: string) => url !== currentHome);
-          chrome.storage.local.set({ home_list: newList }, () => {
-            setHomeList(newList);
-            setCurrentHome(newList[0] || "");
-          });
-        });
+      const currentResult = result[currentHome] || {}
+      currentResult.info = remainingData
+      chrome.storage.local.set({ [currentHome]: currentResult })
+    })
+
+    if (remainingData.length === 0) {
+      const newHomeList = homeList.filter((home) => home !== currentHome)
+      setHomeList(newHomeList)
+      chrome.storage.local.set({ home_list: newHomeList })
+      chrome.storage.local.remove(currentHome)
+      if (newHomeList.length > 0) {
+        setCurrentHome(newHomeList[0])
+      } else {
+        setCurrentHome("")
       }
-    });
-  };
+    }
+  }
 
   return (
     <>
-      <div className="border-b p-8 flex items-center nav">
-        <label className="flex items-center">
-          <div className="flex items-center mr-4 min-w-[140px]">
-            <span className="label-text mr-2">Homepage URL</span>
-            <a className="flex items-center" href={currentHome} target="_blank">
-              <span className="material-symbols-outlined m-auto">
-                open_in_new
-              </span>
-            </a>
-          </div>
+      <div className="navbar bg-base-100 p-4">
+        <div className="flex-1">
+          <h1 className="text-2xl font-bold">Blog to EPUB</h1>
+        </div>
+        <div className="flex-none">
           <select
-            className="select select-bordered w-full max-w-lg"
+            className="select select-bordered w-full max-w-xs"
             onChange={selectHome}
-            value={currentHome}
-          >
-            <option disabled value="">
-              please select a url
-            </option>
+            value={currentHome}>
             {homeList.map((url, idx) => (
               <option key={idx} value={url}>
                 {url}
               </option>
             ))}
           </select>
-        </label>
+        </div>
+      </div>
+      <div className="flex justify-end p-4">
         {isSelected && (
           <>
-            <button
-              className="btn btn-outline btn-error ml-8"
-              onClick={deleteSelected}
-            >
-              Delete Selected
+            <button className="flex" onClick={deleteSelected}>
+              <span className="material-symbols-outlined">delete</span>
             </button>
-            <button className="btn btn-neutral ml-8" onClick={download}>
-              Download EPUB
+            <button className="flex ml-4" onClick={download}>
+              <span className="material-symbols-outlined">download</span>
             </button>
             <button
               className="flex ml-4"
@@ -212,8 +199,7 @@ function Options() {
                 (
                   document.getElementById("settings_modal") as HTMLDialogElement
                 )?.showModal()
-              }
-            >
+              }>
               <span className="material-symbols-outlined">settings</span>
             </button>
             <dialog id="settings_modal" className="modal">
@@ -318,7 +304,7 @@ function Options() {
         )}
       </div>
     </>
-  );
+  )
 }
 
-export default Options;
+export default Options
