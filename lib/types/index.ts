@@ -2,8 +2,20 @@ export const HOME_LIST_KEY = "home_list"
 
 export const SAVED_ARTICLES_KEY = "saved_articles"
 
+export const EPUB_SETTINGS_KEY = "epub_settings"
+
+export interface Article {
+  title: string
+  url: string
+}
+
 export interface Collection {
-  info: { title: string; url: string }[]
+  title?: string
+  info: Article[]
+}
+
+export interface CollectionWithKey extends Collection {
+  key: string
 }
 
 export enum PopupToContentMessage {

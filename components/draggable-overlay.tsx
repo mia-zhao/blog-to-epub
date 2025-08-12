@@ -95,6 +95,8 @@ export const DraggableOverlay = ({
     color: "white",
     cursor: "pointer",
     padding: "4px",
+    paddingLeft: "6px",
+    paddingRight: "6px",
     borderRadius: "4px",
     display: "flex",
     alignItems: "center",

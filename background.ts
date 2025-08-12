@@ -2,7 +2,12 @@ import { ContentToBackgroundMessage } from "~/lib/types"
 
 chrome.runtime.onMessage.addListener((message, _, sendResponse) => {
   if (message.type === ContentToBackgroundMessage.OPEN_OPTIONS) {
-    chrome.tabs.create({ url: chrome.runtime.getURL("options.html") })
+    const url = message.url
+    chrome.tabs.create({
+      url: chrome.runtime.getURL(
+        `options.html${url ? `?url=${encodeURIComponent(url)}` : ""}`
+      )
+    })
     sendResponse({ success: true })
     return true
   }

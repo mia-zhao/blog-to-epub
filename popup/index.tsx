@@ -96,7 +96,7 @@ export default function Popup() {
         )}
         <button className="btn btn-block rounded-lg" onClick={openOptions}>
           <span className="mr-1 text-xl h-7 w-7">📚</span>
-          <span className="text-lg">Manage Collection</span>
+          <span className="text-lg">Manage Articles</span>
         </button>
         <a
           className="link link-success text-lg text-center"

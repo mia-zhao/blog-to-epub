@@ -1,3 +1,31 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* work around for daisyui scrollbar-gutter issue */
+@layer base {
+  :root:has(
+    :is(
+      .modal-open,
+      .modal:target,
+      .modal-toggle:checked + .modal,
+      .modal[open]
+    )
+  ) {
+    scrollbar-gutter: auto !important;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #ddd;
+  border-radius: 4px;
+}

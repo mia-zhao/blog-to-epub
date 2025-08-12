@@ -5,13 +5,12 @@ import { Storage } from "@plasmohq/storage"
 import { useStorage } from "@plasmohq/storage/hook"
 
 import { DraggableOverlay } from "~/components/draggable-overlay"
-import type { Collection } from "~/lib/types"
 import {
   ContentSharedMessage,
   ContentToBackgroundMessage,
-  SAVED_ARTICLES_KEY
+  type Collection
 } from "~/lib/types"
-import { normalizeUrl } from "~/lib/utils"
+import { normalizeUrl, storageService } from "~/lib/utils"
 
 export const getStyle = () => {
   const style = document.createElement("style")
@@ -49,27 +48,17 @@ export default function Content() {
   }, [])
 
   useEffect(() => {
-    if (!collection || !collection.info) return
+    if (!collection || !collection.info) {
+      setSelectedHrefs([])
+      return
+    }
     setSelectedHrefs(collection.info.map((item) => item.url))
   }, [collection])
 
   const saveForLater = () => {
-    const storage = new Storage({
-      area: "local"
-    })
-    storage.get(SAVED_ARTICLES_KEY).then((result) => {
-      const savedArticles = (result as unknown as Collection["info"]) || []
-      const newUrls = collection?.info?.map((item) => item.url) || []
-      const urlsToSave = new Set<string>([
-        ...savedArticles.map((i) => i.url),
-        ...newUrls
-      ])
-      const savedArticlesToSave = [...urlsToSave].map((url) => ({
-        url,
-        title: savedArticles.find((i) => i.url === url)?.title
-      }))
-      storage.set(SAVED_ARTICLES_KEY, savedArticlesToSave)
-    })
+    void (async () => {
+      await storageService.saveForLater(collection)
+    })()
 
     // notify content script to exit select mode
     window.postMessage(
@@ -85,8 +74,8 @@ export default function Content() {
     if (selectedHrefs.length === 0) {
       return (
         <p>
-          Click on the hyperlink to select the article. Double-click on the
-          hyperlink to select a list of articles.
+          Click a link to select an article. Double-click to select multiple
+          articles at once.
         </p>
       )
     }
@@ -94,21 +83,23 @@ export default function Content() {
     return (
       <>
         <div>
-          <div className="text-lg text-black">
-            ✅ {selectedHrefs.length} articles selected
+          <div className="text-lg">
+            ✅ {selectedHrefs.length} article
+            {selectedHrefs.length === 1 ? "" : "s"} selected
           </div>
           <p className="mt-2">
-            Click on the hyperlink to deselect the article. Double-click on the
-            hyperlink to deselect a list of articles.
+            Selected articles are highlighted in yellow. Click highlighted links
+            to deselect, or double-click to deselect multiple articles.
           </p>
         </div>
-        <div className="mt-4 flex gap-4 text-lg">
+        <div className="mt-4 grid grid-cols-2 gap-4 text-lg">
           <button
             className="btn bg-black text-white hover:bg-black/80"
             onClick={async () => {
               try {
                 await chrome.runtime.sendMessage({
-                  type: ContentToBackgroundMessage.OPEN_OPTIONS
+                  type: ContentToBackgroundMessage.OPEN_OPTIONS,
+                  url: currentUrl
                 })
               } catch (error) {
                 console.error("Failed to open options page:", error)

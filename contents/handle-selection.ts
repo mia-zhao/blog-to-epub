@@ -1,13 +1,7 @@
-import { Storage } from "@plasmohq/storage"
-
-import {
-  ContentSharedMessage,
-  HOME_LIST_KEY,
-  PopupToContentMessage,
-  type Collection
-} from "~/lib/types"
+import { ContentSharedMessage, PopupToContentMessage } from "~/lib/types"
 import {
   getClosestAnchor,
+  getDocumentTitle,
   getHref,
   getParallelList,
   getTitle,
@@ -15,7 +9,8 @@ import {
   normalizeUrl,
   removeElementStyle,
   setElementStyle,
-  showTooltip
+  showTooltip,
+  storageService
 } from "~lib/utils"
 
 // content script as single source of truth for select mode
@@ -37,23 +32,23 @@ chrome.runtime.onMessage.addListener((message, _, sendResponse) => {
     notifySelectModeChange(selectMode)
 
     // Load previously selected elements
-    const storage = new Storage({ area: "local" })
-    storage.get(normalizeUrl(document.URL)).then((result) => {
-      const collection = result as unknown as Collection
-      if (collection?.info) {
-        // Find and highlight elements that match stored URLs
-        const urlSet = new Set(collection.info.map((item) => item.url))
-        document.querySelectorAll("a").forEach((link) => {
-          const href = link.getAttribute("href")
-          if (href && urlSet.has(new URL(href, document.URL).href)) {
-            selectedElements.push(link)
-            setElementStyle(link, {
-              backgroundColor: "rgb(255, 233, 165, 0.8)"
-            })
-          }
-        })
-      }
-    })
+    storageService
+      .getCollection(normalizeUrl(document.URL))
+      .then((collection) => {
+        if (collection?.info) {
+          // Find and highlight elements that match stored URLs
+          const urlSet = new Set(collection.info.map((item) => item.url))
+          document.querySelectorAll("a").forEach((link) => {
+            const href = link.getAttribute("href")
+            if (href && urlSet.has(new URL(href, document.URL).href)) {
+              selectedElements.push(link)
+              setElementStyle(link, {
+                backgroundColor: "rgb(255, 233, 165, 0.8)"
+              })
+            }
+          })
+        }
+      })
 
     const cleanupOverlay = handleOverlay()
 
@@ -129,33 +124,28 @@ function clickListener(event: MouseEvent) {
   event.stopImmediatePropagation()
   event.preventDefault()
 
-  const composedPath = event.composedPath()
-  const eventCopy = {
-    target: event.target,
-    composedPath: () => composedPath
-  }
-
   const clickHandler = () => {
-    const target = event.target as Element
-    const anchor = getClosestAnchor(target)
+    void (async () => {
+      const anchor = getClosestAnchor(target)
 
-    if (!anchor) {
-      showTooltip("Please select a hyperlink", event.clientX, event.clientY)
-      return
-    }
+      if (!anchor) {
+        showTooltip("Please select a hyperlink", event.clientX, event.clientY)
+        return
+      }
 
-    const highlightStyle = { backgroundColor: "rgb(255, 233, 165, 0.8)" }
+      const highlightStyle = { backgroundColor: "rgb(255, 233, 165, 0.8)" }
 
-    // Toggle selection
-    if (selectedElements.includes(anchor)) {
-      selectedElements = selectedElements.filter((el) => el !== anchor)
-      setElementStyle(anchor, { backgroundColor: "inherit" })
-    } else {
-      selectedElements.push(anchor)
-      setElementStyle(anchor, highlightStyle)
-    }
+      // Toggle selection
+      if (selectedElements.includes(anchor)) {
+        selectedElements = selectedElements.filter((el) => el !== anchor)
+        setElementStyle(anchor, { backgroundColor: "inherit" })
+      } else {
+        selectedElements.push(anchor)
+        setElementStyle(anchor, highlightStyle)
+      }
 
-    updateList(selectedElements)
+      await updateList(selectedElements)
+    })()
   }
 
   if (event.detail == 1) {
@@ -166,50 +156,55 @@ function clickListener(event: MouseEvent) {
 }
 
 // double click to select and deselect multiple elements
-function dblclickListener(event) {
-  if (isPlasmoUI(event.target as Element)) {
-    return
-  }
+function dblclickListener(event: MouseEvent) {
+  void (async () => {
+    if (isPlasmoUI(event.target as Element)) {
+      return
+    }
 
-  event.stopImmediatePropagation()
-  event.preventDefault()
+    event.stopImmediatePropagation()
+    event.preventDefault()
 
-  // cancel single click event listener
-  if (clickTimeout !== null) {
-    clearTimeout(clickTimeout)
-    clickTimeout = null
-  }
+    // cancel single click event listener
+    if (clickTimeout !== null) {
+      clearTimeout(clickTimeout)
+      clickTimeout = null
+    }
 
-  const anchor = getClosestAnchor(event.target as Element)
-  if (!anchor) {
-    showTooltip(
-      "Please double-click on a hyperlink",
-      event.clientX,
-      event.clientY
-    )
-    return
-  }
+    const anchor = getClosestAnchor(event.target as Element)
+    if (!anchor) {
+      showTooltip(
+        "Please double-click on a hyperlink",
+        event.clientX,
+        event.clientY
+      )
+      return
+    }
 
-  const highlightStyle = { backgroundColor: "rgb(255, 233, 165, 0.8)" }
-  const listToToggle = getParallelList(anchor) as HTMLAnchorElement[]
+    const highlightStyle = { backgroundColor: "rgb(255, 233, 165, 0.8)" }
+    const listToToggle = getParallelList(anchor) as HTMLAnchorElement[]
 
-  const anySelected = listToToggle.some((el) => selectedElements.includes(el))
-
-  listToToggle.forEach((el) => {
-    if (anySelected) {
+    if (selectedElements.includes(anchor)) {
       // Deselect
-      selectedElements = selectedElements.filter((selected) => selected !== el)
-      setElementStyle(el, { backgroundColor: "inherit" })
+      selectedElements.forEach((el) => {
+        if (listToToggle.includes(el)) {
+          setElementStyle(el, { backgroundColor: "inherit" })
+        }
+      })
+
+      selectedElements = selectedElements.filter(
+        (selected) => !listToToggle.includes(selected)
+      )
     } else {
       // Select
-      if (!selectedElements.includes(el)) {
-        selectedElements.push(el)
+      selectedElements = selectedElements.concat(listToToggle)
+      listToToggle.forEach((el) => {
         setElementStyle(el, highlightStyle)
-      }
+      })
     }
-  })
 
-  updateList(selectedElements)
+    await updateList(selectedElements)
+  })()
 }
 
 function handleOverlay(): () => void {
@@ -270,7 +265,7 @@ function handleOverlay(): () => void {
   }
 }
 
-function updateList(listElements: HTMLAnchorElement[]) {
+async function updateList(listElements: HTMLAnchorElement[]) {
   const info: { url: string; title: string }[] = []
 
   listElements.forEach((element) => {
@@ -283,20 +278,12 @@ function updateList(listElements: HTMLAnchorElement[]) {
     }
   })
 
-  const storage = new Storage({
-    area: "local"
-  })
+  await storageService.addToHomeList(normalizeUrl(document.URL))
 
-  storage.get(HOME_LIST_KEY).then((result) => {
-    const homeList = (result as unknown as string[]) || []
-    const homeUrl = normalizeUrl(document.URL)
-    if (!homeList.includes(homeUrl)) {
-      homeList.push(homeUrl)
-      storage.set(HOME_LIST_KEY, homeList)
-    }
+  await storageService.saveCollection(normalizeUrl(document.URL), {
+    title: getDocumentTitle(document),
+    info
   })
-
-  storage.set(normalizeUrl(document.URL), { info })
 }
 
 window.addEventListener("unload", () => {
