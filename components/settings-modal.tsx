@@ -6,8 +6,8 @@ import "~/style.css"
 
 export function SettingsModal({ isOpen, onClose }) {
   const [settings, setSettings] = useStorage(EPUB_SETTINGS_KEY, {
-    enableHyperlink: true,
-    processImages: true
+    includeHyperlinks: false,
+    includeOfflineImages: false
   })
 
   if (!isOpen) return null
@@ -25,11 +25,11 @@ export function SettingsModal({ isOpen, onClose }) {
             <input
               type="checkbox"
               className="toggle"
-              checked={settings.enableHyperlink}
+              checked={settings.includeHyperlinks}
               onChange={(e) =>
                 setSettings({
                   ...settings,
-                  enableHyperlink: e.target.checked
+                  includeHyperlinks: e.target.checked
                 })
               }
             />
@@ -46,11 +46,11 @@ export function SettingsModal({ isOpen, onClose }) {
             <input
               type="checkbox"
               className="toggle"
-              checked={settings.processImages}
+              checked={settings.includeOfflineImages}
               onChange={(e) =>
                 setSettings({
                   ...settings,
-                  processImages: e.target.checked
+                  includeOfflineImages: e.target.checked
                 })
               }
             />

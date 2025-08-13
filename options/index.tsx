@@ -1,11 +1,17 @@
 import type { DragEndEvent } from "@dnd-kit/core"
 import { useEffect, useMemo, useState } from "react"
 
+import { useStorage } from "@plasmohq/storage/hook"
+
 import { SettingsModal } from "~/components/settings-modal"
 import { ToastContainer, useToasts } from "~/components/toast"
 import { ExportController } from "~/lib/core/export-controller"
-import type { ExportProgress } from "~/lib/core/types"
-import { SAVED_ARTICLES_KEY, type CollectionWithKey } from "~/lib/types"
+import type { ExportProgress, ExportSettings } from "~/lib/core/types"
+import {
+  EPUB_SETTINGS_KEY,
+  SAVED_ARTICLES_KEY,
+  type CollectionWithKey
+} from "~/lib/types"
 import { storageService } from "~/lib/utils"
 
 import "~/style.css"
@@ -15,6 +21,11 @@ import { getCollectionId } from "./collection-selector"
 import { CollectionTable } from "./collection-table"
 import { ErrorState } from "./error-state"
 import { LoadingState } from "./loading-state"
+
+type ExportUISettings = {
+  includeHyperlinks: boolean
+  includeOfflineImages: boolean
+}
 
 export default function Options() {
   const [isLoading, setIsLoading] = useState(true)
@@ -34,6 +45,10 @@ export default function Options() {
     null
   )
   const [isExporting, setIsExporting] = useState(false)
+  const [epubSettings] = useStorage<ExportUISettings>(EPUB_SETTINGS_KEY, {
+    includeHyperlinks: false,
+    includeOfflineImages: false
+  })
   const { toasts, removeToast, showSuccess, showError, showWarning } =
     useToasts()
 
@@ -190,15 +205,17 @@ export default function Options() {
     setExportProgress(null)
 
     try {
+      const exportSettings: ExportSettings = {
+        format: "epub",
+        title: selectedCollection.title,
+        includeOfflineImages: epubSettings?.includeOfflineImages ?? false,
+        includeHyperlinks: epubSettings?.includeHyperlinks ?? false,
+        maxConcurrency: 3,
+        timeout: 30000
+      }
+
       const exportController = new ExportController(
-        {
-          format: "epub",
-          title: selectedCollection.title,
-          includeOfflineImages: true,
-          includeHyperlinks: true,
-          maxConcurrency: 3,
-          timeout: 30000
-        },
+        exportSettings,
         (progress) => {
           setExportProgress(progress)
         }

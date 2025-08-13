@@ -73,10 +73,30 @@ async function processArticle(
 ): Promise<Document> {
   if (!options.includeHyperlinks) {
     document.querySelectorAll("a").forEach((a) => {
-      const text = document.createTextNode(a.textContent || "")
-      a.replaceWith(text)
+      // Check if the link contains only images or other non-text content
+      const hasImages = a.querySelector("img")
+      const textContent = a.textContent?.trim()
+
+      if (hasImages && !textContent) {
+        // If link only contains images, just remove the link wrapper but keep the content
+        const parent = a.parentNode
+        if (parent) {
+          while (a.firstChild) {
+            parent.insertBefore(a.firstChild, a)
+          }
+          parent.removeChild(a)
+        }
+      } else if (textContent) {
+        // If link has text content, replace with text only
+        const text = document.createTextNode(textContent)
+        a.replaceWith(text)
+      } else {
+        // If link is empty, remove it entirely
+        a.remove()
+      }
     })
   }
+
   if (options.includeOfflineImages) {
     const processImage = async (
       img: HTMLImageElement,
@@ -89,9 +109,17 @@ async function processArticle(
         return
       }
 
+      // Preserve original dimensions for aspect ratio
+      const originalWidth = img.width || img.naturalWidth
+      const originalHeight = img.height || img.naturalHeight
+
       img.removeAttribute("style")
-      if (img.hasAttribute("width") && img.hasAttribute("height")) {
-        img.removeAttribute("height")
+
+      // Set max-width while preserving aspect ratio
+      if (originalWidth && originalHeight) {
+        img.style.maxWidth = "100%"
+        img.style.height = "auto"
+        img.style.aspectRatio = `${originalWidth}/${originalHeight}`
       }
 
       try {
@@ -118,6 +146,19 @@ async function processArticle(
     await Promise.all(images.map((img, index) => processImage(img, index)))
   } else {
     document.querySelectorAll("img").forEach((img, index) => {
+      // Preserve original dimensions for aspect ratio when not processing offline
+      const originalWidth = img.width || img.naturalWidth
+      const originalHeight = img.height || img.naturalHeight
+
+      img.removeAttribute("style")
+
+      // Set responsive styling while preserving aspect ratio
+      if (originalWidth && originalHeight) {
+        img.style.maxWidth = "100%"
+        img.style.height = "auto"
+        img.style.aspectRatio = `${originalWidth}/${originalHeight}`
+      }
+
       img.alt = `[Image ${index + 1}]${img.alt ? " " + img.alt : ""}`
       img.classList.add("responsive-img")
     })

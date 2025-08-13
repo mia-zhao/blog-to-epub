@@ -20,8 +20,8 @@ export class ContentExtractor {
 
   constructor(config: ContentExtractionConfig = {}) {
     this.config = {
-      includeOfflineImages: true,
-      includeHyperlinks: true,
+      includeOfflineImages: false,
+      includeHyperlinks: false,
       timeout: 30000,
       maxConcurrency: 3,
       ...config
