@@ -1,7 +1,9 @@
 {
   "name": "blog-to-epub",
+  "displayName": "Blog to EPUB",
+  "description": "Export blog articles to EPUB files",
   "private": true,
-  "version": "0.0.1",
+  "version": "2.0.0",
   "scripts": {
     "dev": "plasmo dev",
     "build": "plasmo build",
