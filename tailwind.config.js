@@ -1,7 +1,12 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   mode: "jit",
-  content: ["./**/*.tsx"],
+  content: [
+    "./options/*.tsx",
+    "./popup/*.tsx",
+    "./contents/*.tsx",
+    "./components/*.tsx"
+  ],
   theme: {
     extend: {}
   },
